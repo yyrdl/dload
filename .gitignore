@@ -1,0 +1,10 @@
+#intellij config
+.idea
+#npm log
+npm-debug.log
+
+#npm dependency
+node_modules
+#bench dependency
+benchmark/node_modules
+benchmark/test.js
