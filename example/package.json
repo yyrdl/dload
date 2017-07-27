@@ -1,0 +1,8 @@
+{
+  "name": "dload-example",
+  "version": "0.0.1",
+  "dependencies": {
+    "zco":"1.3.5",
+    "path":"*"
+  }
+}

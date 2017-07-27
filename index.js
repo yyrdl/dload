@@ -2,7 +2,7 @@
  * Created by jason on 2017/7/27. license MIT
  */
 var slice = [].slice;
-
+ 
 /**
  * convert some primary value to corresponding Object
  * */
@@ -49,7 +49,9 @@ if (!module.__registed__) {
 		}
 		return mo;
 	}
+
 	module.__registed__ = true;
+
 }
 
 var monitors = {};
@@ -142,9 +144,11 @@ var clear_cache = function (uid_tag) {
 	require.cache[uid_tag] = null;
 
 }
+
 /**
  * reload target module
  * */
+
 var reload = function (file_path) {
 
 	var uid_tag = require.resolve(file_path);
@@ -153,11 +157,8 @@ var reload = function (file_path) {
 
 	clear_cache(uid_tag);
 
-	var mo = require(file_path);
+	_update(uid_tag, require(file_path));
 
-	_update(uid_tag, mo);
-
-	mo = null;
 }
 
 exports.new = newMonitor;

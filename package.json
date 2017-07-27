@@ -1,0 +1,22 @@
+{
+  "name": "dload",
+  "version": "0.0.1",
+  "description": "hot-reload plugin for nodejs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yyrdl/dload.git"
+  },
+  "keywords": [
+    "hot-reload"
+  ],
+  "author": "yyrd",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yyrdl/dload/issues"
+  },
+  "homepage": "https://github.com/yyrdl/dload#readme"
+}
