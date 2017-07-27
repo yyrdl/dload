@@ -4,6 +4,7 @@
 
 const dload = require("../index");
 
+
 const mo = dload.new();
 
 mo.m3 = require("./module3");
@@ -61,9 +62,9 @@ const run = function () {
 			yield mo.fs.writeFile("./module3.js", new_m3, co_next);
 			/**
 			 * reload module3.js
-             * PS：we just reload the file ,and there is node code like `mo.m3=require("./module3.js")`
+             * PS：we just reload the file ,and there is no code like `mo.m3=require("./module3.js")`
              *
-             * 注意：这里是关键点，我们只是从新加载了这个文件，但没有`mo.m3 = require("./module3.js")`这样的代码，
+             * 注意：这里是关键点，我们只是重新加载了这个文件，但没有`mo.m3 = require("./module3.js")`这样的代码，
              * dload 会帮你完成相应的更新。
              *
              * reload之后，循环到for循环的第一行就是运行的更新之后的module3.js了
