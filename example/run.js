@@ -45,7 +45,7 @@ const m3_content = 'const dload=require("../index");\n' +
 const run = function () {
 	mo.co(function  * (co_next) {
 
-		for (let i = 0; i < 2; i++) {
+		for (let i = 0; i < 1000; i++) {
 			/**
 			 * run the func function of module3.js
 			 * */
