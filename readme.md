@@ -1,47 +1,90 @@
 # Dload
 
-hot-reload plugin for node.js
+Hot-reload plugin for node.js
 
 # Useage
 
 `npm install dload`
 
 # require & reload
+
+ There  are three files (m1.js,m2.js,m3.js), and  both of `m2.js` and `m3.js` depend on `m1.js`,the code below
+will show how to do hot-reload:
+
+The content of `m1.js`:
+
 ```js
-/**
-  * prepare
-  * 准备工作
-  */
+exports.name="abc";
+
+```
+
+`m2.js`:
+
+```js
 
 const dload = require("dload");
 const mo = dload.new();
 
-/**
-  require the target module
-  for example：
-*/
 
-mo.m3 = require("./module3.js")
-mo.path = require("path");
+mo.m1 = require("./m1.js");//just require m1.js
 
 
-//when need to reload 'module3.js',just run the code below:
-
-dload.reload(mo.path.join(__dirname,"./module3.js"));
-
-//mo.m3 will be updated automatically
+exports.func=function(){
+  return mo.m1.name;
+}
 
 ```
 
-Full example is in the directory `example`.
-完整示例在example文件夹下
+`m3.js`:
+
+```js
+const dload = require("dload");
+const mo = dload.new();
+
+mo.fs = require("fs");
+mo.co = require("zco");//npm install zco
+mo.path = require("path");//npm install path
+mo.m2 = require("./m2.js");// require m2.js
+mo.m1 = require("./m1.js"); // require m1.js
+
+const m1_content='exports.name="abc";';
+
+mo.co(function*(co_next){
+
+    let data = mo.m2.func();
+
+    console.log(data);//output "abc"
+
+    /**
+       let's modify the content of m1.js  and reload it .
+    */
+    let new_content = m1_content.replace(/abc/,"hello world");//replace `abc` to `hello world`
+
+    yield mo.fs.writeFile("./m1.js",new_content,co_next);//rewrite file `m1.js`
+
+    dload.reload(mo.path.join(__dirname,"./m1.js"));//reload file `m1.js`
+
+    data = mo.m2.func();
+
+    console.log(data);//output  "hello world"
+
+    console.log(mo.m1.name);// output "hello world"
+
+})()
+
+```
+
+Just run `m3.js`.
+
+From the outputs ,we will see that the module `m1` is be updated globally, and all we
+need to do is just run `dload.reload(target_module)`.
 
 
 # _release
 
 Some modules need to release resource manually when reload. you can define a method named `_release` for the module to achieve this.
 
-一些模块在热加载之前需要手动释放资源，可以为这样的模块定义一个名为`_release`的方法。
+
 
 example:
 
@@ -62,11 +105,16 @@ exports._release = function(){
    }
 }
 ```
+# How does it work
+
+The `mo` in the example code is returned by `dload.new()`, at first ,`mo` is an empty object.What's important is
+'mo' is also hold by __dload__. When module is be reloaded ,__dload__ just assign the new module to `mo`, this operation will
+update target module globally.Because the reference of old module only exist in module system and `mo`,and they are all
+under control,so there is no problem with memory management.
 
 
 # Warning
 
-不要做下面这样的操作:
 Don't do operation like this:
 
 ```js
@@ -74,4 +122,4 @@ const m3 = mo.m3;
 //******
 ```
 This operation will make target module out of dload's control.
-这会使dload丧失对目标模块的控制。
+
