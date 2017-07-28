@@ -1,3 +1,6 @@
+
+[中文文档](https://github.com/yyrdl/dload/blob/master/readme_ch.md)
+
 # Dload
 
 Hot-reload plugin for node.js
