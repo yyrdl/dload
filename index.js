@@ -160,13 +160,39 @@ var _update = function (uid_tag, new_mo, except) {
  * clear the cache hold by module system recursively ,and return what module was be deleted
  *
  * */
-var _clear_cache = function (uid_tag) {
+var _caculate_clear_modules = function (uid_tag) {
 
 	var old_mo = require.cache[uid_tag];
 
 	var delete_sets = [];
 
-	_delete(uid_tag);
+	var children = [];
+
+	for (var i = 0; i < old_mo.children.length; i++) {
+
+		if (old_mo.children[i].parent && old_mo.children[i].parent.filename == uid_tag) {
+			children.push(old_mo.children[i].filename);
+		}
+	}
+
+	for (var i = 0; i < children.length; i++) {
+
+		delete_sets = delete_sets.concat(_caculate_clear_modules(children[i]));
+
+	}
+
+	delete_sets.push(uid_tag);
+
+	return delete_sets;
+}
+
+var _clear_module_system_cache = function (uid_tag) {
+
+	var old_mo = require.cache[uid_tag];
+
+	if (!old_mo) {
+		return null;
+	}
 
 	/**
 	 * remove the reference from child module
@@ -181,9 +207,7 @@ var _clear_cache = function (uid_tag) {
 	}
 
 	for (var i = 0; i < children.length; i++) {
-
-		delete_sets = delete_sets.concat(_clear_cache(children[i]));
-
+		_clear_module_system_cache(children[i]);
 	}
 
 	/**
@@ -206,32 +230,59 @@ var _clear_cache = function (uid_tag) {
 
 	old_mo = null;
 
+	require.cache[uid_tag] = null;
+
 	delete require.cache[uid_tag];
 
-	delete_sets.push(uid_tag);
-
-	return delete_sets;
+	return null;
 }
 
 /**
  * reload target module
- * 一个模块可能不仅在这里会用到，在其他模块中也会用到，如果更新后该模块没有用到，则会导致其他用到的地方
- * 该模块不可用
+ * 感觉又回到了C++时代，小心地处理内存。。
  * */
 
 var reload = function (file_path) {
 
 	var uid_tag = require.resolve(file_path);
 
-	var delete_sets = _clear_cache(uid_tag);
+	if(!uid_tag){
+		return null;
+	}
 
-	require(file_path); // re-require
+	var delete_sets = _caculate_clear_modules(uid_tag);
+
+	var temp_exports = {};
+
+	for (var i = 0; i < delete_sets.length; i++) {
+		/**
+		 * there exists runtime-status in some modules ,such as an counter. we should keep it temporarily.
+		 * */
+
+		temp_exports[delete_sets[i]] = require.cache[delete_sets[i]].exports;
+
+		/**
+		 * delete the reference in module system
+		 * */
+		_clear_module_system_cache(delete_sets[i]);
+
+	}
+
+	/**
+	 * re-require
+	 * */
+	require(file_path);
 
 	var un_reload = [];
 
 	for (var i = 0; i < delete_sets.length; i++) {
 
 		if (require.cache[delete_sets[i]]) {
+
+
+            delete temp_exports[delete_sets[i]];
+
+			_delete(delete_sets[i]);
 
 			_update(delete_sets[i], require.cache[delete_sets[i]].exports);
 
@@ -263,19 +314,49 @@ var reload = function (file_path) {
 			}
 		}
 
-		if (!tag) {
-           
-			require(un_reload[i]);
+		if (!tag) { //the module also be used in other place
+
+			require(un_reload[i]); //re-require it
+
+			/**
+			 * recovery from temp
+			 * 从保存的缓存恢复，保存原模块的缓存是由于模块本身可能有状态，而重新加载会重新刷新状态，所以需要从缓存恢复
+			 *
+			 * */
+			if (temp_exports[un_reload[i]]) {
+
+				var exp = require.cache[un_reload[i]].exports;
+
+
+				if ("function" === typeof exp._release) {
+
+					exp._release();
+
+				}
+
+				require.cache[un_reload[i]].exports = temp_exports[un_reload[i]];
+
+				delete temp_exports[un_reload[i]];
+
+			}
 
 			_update(un_reload[i], require.cache[un_reload[i]].exports, delete_sets);
 
 		} else {
 
+			delete temp_exports[un_reload[i]];
+
+			delete monitors[un_reload[i]];
+
+			_delete(un_reload[i]);
+
 			_clear(un_reload[i]);
 
 		}
 	}
+
 };
+
 
 exports.new = new_monitor;
 exports.reload = reload;

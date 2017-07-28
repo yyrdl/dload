@@ -1,5 +1,8 @@
 /**
  * Created by jason on 2017/7/27.
+ *
+ * this file is designed to check if the module will be updated automatically , and see if there is a memory problem.
+ *
  */
 
 const dload = require("../index");
@@ -7,10 +10,11 @@ const dload = require("../index");
 
 const mo = dload.new();
 
-mo.m3 = require("./module3");
+mo.m3 = require("./update_and_memory/module3");
 mo.co = require("zco");
 mo.fs = require("fs");
 mo.path = require("path");
+
 
 const start_mem_use = process.memoryUsage().heapUsed;
 
@@ -22,7 +26,7 @@ const print_mem_use = function () {
 /**
  * the content of module3.js
  * */
-const m3_content = 'const dload=require("../index");\n' +
+const m3_content = 'const dload=require("../../index");\n' +
 
 	'const mo=dload.new();\n' +
 	'mo.m1=require("./module1");\n' +
@@ -31,7 +35,7 @@ const m3_content = 'const dload=require("../index");\n' +
 	'const buf=Buffer.alloc(100000);\n' +
 	'const func=function () {\n' +
 	'var tag="abc";\n' +
-	'return tag+"||"+buf.length+"||"+mo.m1+"||"+mo.m2.name;\n' +
+	'return tag+"||"+buf.length+"||"+mo.m1+"||"+mo.m2.name+(mo.m4?"||"+mo.m4.counter++:"");\n' +
 	'}\n' +
 
 	'exports.func=func;';
@@ -59,7 +63,7 @@ const run = function () {
 			 * rewrite the content of module3.js
 			 * */
 			let new_m3 = m3_content.replace(/abc/, i + "");
-			yield mo.fs.writeFile("./module3.js", new_m3, co_next);
+			yield mo.fs.writeFile("./update_and_memory/module3.js", new_m3, co_next);
 			/**
 			 * reload module3.js
              * PS：we just reload the file ,and there is no code like `mo.m3=require("./module3.js")`
@@ -69,12 +73,13 @@ const run = function () {
              *
              * reload之后，循环到for循环的第一行就是运行的更新之后的module3.js了
 			 * */
-			dload.reload(mo.path.join(__dirname, "./module3.js"));
+			dload.reload(mo.path.join(__dirname, "./update_and_memory/module3.js"));
 			/**
 			 * print the memory
 			 * */
 			print_mem_use()
 		}
+
 		console.log("wait 10s to print final memory!")
 		yield setTimeout(co_next, 10 * 1000);
 		print_mem_use();
