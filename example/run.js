@@ -14,7 +14,7 @@ mo.path = require("path");
 
 const start_mem_use = process.memoryUsage().heapUsed;
 
-const print_mem_user = function () {
+const print_mem_use = function () {
 	let mem_log = "********** rss log *********\nmemory use:" +
 		(process.memoryUsage().heapUsed - start_mem_use) + " bytes\n***********************\n";
 	console.log(mem_log);
@@ -45,7 +45,7 @@ const m3_content = 'const dload=require("../index");\n' +
 const run = function () {
 	mo.co(function  * (co_next) {
 
-		for (let i = 0; i < 1000; i++) {
+		for (let i = 0; i < 2; i++) {
 			/**
 			 * run the func function of module3.js
 			 * */
@@ -73,11 +73,11 @@ const run = function () {
 			/**
 			 * print the memory
 			 * */
-			print_mem_user()
+			print_mem_use()
 		}
 		console.log("wait 10s to print final memory!")
 		yield setTimeout(co_next, 10 * 1000);
-		print_mem_user();
+		print_mem_use();
 	})()
 }
 

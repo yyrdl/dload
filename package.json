@@ -1,6 +1,6 @@
 {
   "name": "dload",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "hot-reload plugin for nodejs",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,7 @@
   "keywords": [
     "hot-reload"
   ],
-  "author": "yyrd",
+  "author": "yyrdl",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/yyrdl/dload/issues"
