@@ -29,7 +29,9 @@ if (!module.__registed__) {
 
 	module._load = function () {
 		var args = slice.call(arguments);
+
 		var filename = module._resolveFilename.apply(module, args);
+
 		var mo = load.apply(module, args);
 		if (undefined !== mo && 　null !== mo) {
 			/**
@@ -37,15 +39,15 @@ if (!module.__registed__) {
 			 * */
 			mo = _convert(mo);
 
-			if ((null !== mo && undefined !== mo) && undefined === mo.__uid_tag__) {
+			if (null !== mo && undefined !== mo) {
 				/**
 				 * add an identity to the module
 				 * */
+
 				mo.__uid_tag__ = filename;
 
 				Object.defineProperty(mo, "__uid_tag__", {
-					enumerable: false,
-					writable: false
+					enumerable: false
 				});
 			}
 		}
@@ -83,6 +85,7 @@ var _delete = function (uid_tag) {
 	for (var p in monitors) {
 		var mon = monitors[p];
 		for (var p in mon) {
+
 			if (mon[p].__uid_tag__ === uid_tag) {
 				/**
 				 * for some modules which need to release resource manually
@@ -246,7 +249,7 @@ var reload = function (file_path) {
 
 	var uid_tag = require.resolve(file_path);
 
-	if(!uid_tag){
+	if (!uid_tag) {
 		return null;
 	}
 
@@ -279,8 +282,7 @@ var reload = function (file_path) {
 
 		if (require.cache[delete_sets[i]]) {
 
-
-            delete temp_exports[delete_sets[i]];
+			delete temp_exports[delete_sets[i]];
 
 			_delete(delete_sets[i]);
 
@@ -327,7 +329,6 @@ var reload = function (file_path) {
 
 				var exp = require.cache[un_reload[i]].exports;
 
-
 				if ("function" === typeof exp._release) {
 
 					exp._release();
@@ -356,7 +357,73 @@ var reload = function (file_path) {
 	}
 
 };
+/**
+ * just clean the cache of a single file ,and reload it
+ * */
+var reload_one_file = function (full_file_path) {
 
+	var uid_tag = require.resolve(full_file_path);
+
+	if (!uid_tag) {
+		return null;
+	}
+
+	var old_mo = require.cache[uid_tag];
+
+	if (!old_mo) {
+		return null;
+	}
+
+	/**
+	 * delete the reference in children
+	 * */
+	for (var i = 0; i < old_mo.children.length; i++) {
+
+		if (old_mo.children[i].parent && old_mo.children[i].parent.filename == uid_tag) {
+			old_mo.children[i].parent = null;
+		}
+	}
+	/**
+	 * delete the reference in parent module
+	 * */
+	if (old_mo.parent) {
+		var parent_mo = old_mo.parent;
+
+		var children = [];
+
+		for (var i = 0; i < parent_mo.children.length; i++) {
+			if (parent_mo.children[i].filename !== uid_tag) {
+				children.push(parent_mo.children[i]);
+			} else {
+				parent_mo.children[i] = null;
+			}
+		}
+		parent_mo.children = children;
+	}
+
+	old_mo = null;
+
+	/**
+	 * delete the reference in require.cache
+	 * */
+	delete require.cache[uid_tag];
+
+    /**
+	 * delete the reference in monitors
+	 * */
+	_delete(uid_tag);
+
+	/**
+	 * re-require
+	 * */
+	var new_mo = require(full_file_path);
+
+	/**
+	 * update globally
+	 * */
+	_update(uid_tag, new_mo);
+}
 
 exports.new = new_monitor;
 exports.reload = reload;
+exports.reload_one_file = reload_one_file;

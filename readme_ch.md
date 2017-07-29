@@ -8,6 +8,8 @@ node.js 热加载模块.
 
 # require & reload
 
+API: `dload.reload(full_path_of_target_module)`
+
 假设有三个文件,分别是m1.js ,m2.js,m3.js. 其中m2.js和m3.js都依赖m1.js,演示一下热加载.
 
 `m1.js` 的内容：
@@ -107,6 +109,12 @@ exports._release = function(){
    }
 }
 ```
+# Reload_one_file
+
+`dload.reload` 这个API是递归操作，目标模块的子模块也会被重新加载，(这里的子模块是在node.js 的require系统建立的模块依赖树下讨论的),
+很多时候只有单个文件被修改，此时可以用`dload.reload_one_file`这个api来重新加载单个文件。
+
+API ：`dload.reload_one_file(full_path_of_target_module)`
 
 # dload 是怎样工作的
 

@@ -3,13 +3,15 @@
 
 # Dload
 
-Hot-reload plugin for node.js
+Hot reload plugin for node.js
 
 # Useage
 
 `npm install dload`
 
 # require & reload
+
+API: `dload.reload(full_path_of_target_module)`
 
  There  are three files (m1.js,m2.js,m3.js), and  both of `m2.js` and `m3.js` depend on `m1.js`,the code below
 will show how to do hot-reload:
@@ -79,6 +81,14 @@ mo.co(function*(co_next){
 
 Just run `m3.js`.
 
+Output:
+
+```
+abc
+hello world
+hello world
+```
+
 From the outputs ,we will see that the module `m1` is be updated globally, and all we
 need to do is just run `dload.reload(target_module)`.
 
@@ -108,10 +118,20 @@ exports._release = function(){
    }
 }
 ```
+
+# Reload_one_file
+
+`dload.reload` will delete the old module recursively ,so the child modules (the module tree built by node.js's require system) will be deleted at
+the same time.But in most cases ,only a few files are changed ,we just want to reload a single file. Now, you can use
+`dload.reload_one_file` to achieve this.
+
+API: `dload.reload_one_file(full_path_of_target_module)`
+
+
 # How does it work
 
 The `mo` in the example code is returned by `dload.new()`, at first ,`mo` is an empty object.What's important is
-'mo' is also hold by __dload__. When module is be reloaded ,__dload__ just assign the new module to `mo`, this operation will
+'mo' is also hold by __dload__. When module is been reloaded ,__dload__ just assign the new module to `mo`, this operation will
 update target module globally.Because the reference of old module only exist in module system and `mo`,and they are all
 under control,so there is no problem with memory management.
 
