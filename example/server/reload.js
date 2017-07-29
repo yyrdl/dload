@@ -28,7 +28,7 @@ const start_reload=function () {
 
             yield fs.writeFile(path.join(__dirname,"./router.js"),new_counter,co_next);
 
-            dload.reload(path.join(__dirname,"./router.js"));//修改完之后热加载
+            dload.reload_one_file(path.join(__dirname,"./router.js"));//修改完之后热加载
         }
     })()
 };
