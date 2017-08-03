@@ -1,88 +1,122 @@
 # Dload
 
-node.js 热加载模块.
+node.js 热加载模块.该模块允许在不重启程序的情况下重新加载指定模块。
 
-# 安装
+__需要注意__: 为node.js实现一个安全的热加载工具是非常困难的。`dload` 提供了一个优雅的方式来进行热更新，但并不能解决热加载的所有
+问题。开发者需要格外注意那些热更新的模块创建的资源，一定要小心释放他们。最好的方式是需要热更新的模块不持有资源,只是接受一个输入
+然后给出相应的返回。
+
+# 用法
 
 `npm install dload`
 
-# require & reload
-
-API: `dload.reload(full_path_of_target_module)`
-
-假设有三个文件,分别是m1.js ,m2.js,m3.js. 其中m2.js和m3.js都依赖m1.js,演示一下热加载.
-
-`m1.js` 的内容：
 
 ```js
-exports.name="abc";
+const dload = require("dload");
+const path = require("path");
+const mo = dload.new();
+
+mo.hot_module = require("./hot_module.js");
+
+// ...对'hot_module.js'做些修改，并保存
+
+dload.reload(path.join(__dirname,"./hot_module.js"));//调用`dload.reload`重新加载
+
+//mo.hot_module 已经被更新了
 
 ```
 
-`m2.js` 的内容：
+# Reload
+
+
+`dload.reload(full_path_of_target_module)`
+
+`dload.reload` 方法用来热加载指定模块，并更新到全局，其唯一参数是对应模块的完整路径。`dload.reload`是递归地进行热加载，
+也就是说对应模块的子模块也会被重新加载.
+
+当某一文件改变，常见的情况是文件系统监测到某一文件被修改（`fs.watch`），这时使用`dload.reload`重新加载对应文件。
+
+
+__例子__:
+
+下面的例子演示如何使用`dload`。将会有三个文件，其中一个将在运行时被修改，修改后调用`dload.reload`再重新加载，可以观测到所有的
+改动将立即生效.
+
+
+文件 : `my_hot_module.js`
 
 ```js
-/**
-  使模块具备热加载功能的初始步骤
-*/
+  exports.content = "abc";
+```
+
+文件 : `a_user_of_hot_module.js`
+
+```js
+
 const dload = require("dload");
 const mo = dload.new();
 
-mo.m1 = require("./m1.js");//加载m1.js，这里只是普通的加载
+mo.my_hot_module = require("./my_hot_module.js");
 
-//暴露一个简单的方法
-exports.func=function(){
-  return mo.m1.name;
+exports.run=function(){
+  return mo.my_hot_module.content;
 }
-
 ```
 
-`m3.js`的内容:
+文件 : `test.js`
 
 ```js
-/**
-  使模块具备热加载功能的初始步骤
-*/
 const dload = require("dload");
 const mo = dload.new();
 
 mo.fs = require("fs");
 mo.co = require("zco");//npm install zco
 mo.path = require("path");//npm install path
-mo.m2 = require("./m2.js");//加载m2.js
-mo.m1 = require("./m1.js");
 
-const m1_content='exports.name="abc";';
+mo.user_of_hot_module = require("./a_user_of_hot_module.js");
+mo.my_hot_module = require("./my_hot_module.js");
+
+const my_hot_module_content='exports.content="abc";';
 
 mo.co(function*(co_next){
 
-    let data = mo.m2.func();
+    let data = mo.user_of_hot_module.run();
 
-    console.log(data);//打出"abc"
+    console.log(data);//输出 "abc"
 
     /**
-      开始修改m1.js的内容，并重新加载m1.js
+       下面的代码会修改"my_hot_module.js" 导出的值，并重新加载
     */
-    let new_content = m1_content.replace(/abc/,"hello world");
+    let new_content = my_hot_module_content.replace(/abc/,"hello world");//将`abc`替换成`hello world`
 
-    yield mo.fs.writeFile("./m1.js",new_content,co_next);//重写m1.js文件
+    yield mo.fs.writeFile("./my_hot_module.js",new_content,co_next);//将新内容写入 `my_hot_module.js`
 
-    dload.reload(mo.path.join(__dirname,"./m1.js"));//重新加载m1.js（即热加载）;
+    dload.reload(mo.path.join(__dirname,"./my_hot_module.js"));//重新加载 `my_hot_module.js`
 
-    data = mo.m2.func();
 
-    console.log(data);//打出 "hello world"
+    data = mo.user_of_hot_module.run();
 
-    console.log(mo.m1.name);// 打出 "hello world"
+    console.log(data);//输出  "hello world" ,不再是`abc`
+
+    console.log(mo.my_hot_module.content);// 输出  "hello world" ,不再是`abc`
 
 })()
 
 ```
 
-在m3.js中 ，热加载之前先打印了m2的执行结果，然后修改m1.js的内容，再热加载m1.js。接着直接运行mo.m2.func ，从打出的
-结果来看 m1.js的修改已经更新到m2.js ，也更新到了m3.js。 也即热加载成功。
+运行 `test.js` 将会打出:
+```
+abc
+hello world
+hello world
+```
 
-在项目的example文件夹下有更完整和复杂的例子。
+在`test.js` 里面我们重写了`my_hot_module.js`,将原来的`abc`替换成`hello world` ，然后使用`dload.reload`重新加载了`my_hot_module.js`.
+
+之后立即运行了`mo.user_of_hot_module.run()`，并打出运行的结果，`a_user_of_hot_module.js`的`run`方法返回的是`my_hot_module.js`导出的
+`content`。正如大家所见，打出的是`hello world`。也即是说对`my_hot_module.js`的修改在`dload.reload`之后立即生效了。
+
+`dload`最好的地方是热加载所需要做的事只是调用`reload`方法，不必再去`require`一遍相应的模块，并且程序不必重启。
 
 
 # _release
