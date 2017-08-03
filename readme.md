@@ -5,11 +5,9 @@
 `dload` is a hot-reload tool for node.js. You can use it to reload your module gracefully ,and your server would not restart.
 
 
-__Fist Of All__ : It's very difficult to implement a safety hot-reload tool.`dload` can't cover  everything for you ,it just provide
-
+__Fist Of All__ : It's very difficult to implement a safety hot-reload tool. `dload` can't cover  everything for you ,it just provide
 a nice way to mannage the reference of  modules,and update module globally without any extra code.You should be careful of the resource
-
-created by the hot module.And the best way is that the hot module dosen't create anything,it just takes an input and returns an output.
+created by the hot module.And the best way is that the hot module dosen't hold any resource,it just takes an input and returns an output.
 
 
 
@@ -39,7 +37,7 @@ dload.reload(path.join(__dirname,"./hot_module.js"));
 The method (`dload.reload`) will reload target module ,and replace old module with new module globally. The only argument of `dload.reload`
 is the full path of target module. And it will reload  recursively,which means the child module will be reloaded at the same time.
 
-You can use this method to reload a module when something is changed.
+You can use this method to reload a module when it is changed.
 
 __Example__:
 
@@ -114,13 +112,13 @@ hello world
 ```
 
 In `test.js` ,we rewrite file `my_hot_module.js`,replace  text "abc"  with "hello world", and then  reload `my_hot_module.js` by invoking `dload.reload`.
-After that ,we invoke the method `run` of `a_user_of_hot_module.js` immediately ,which will return the `content` export by `my_hot_module.js`, and print
-the result, as you can see ,it print `hello world` ，which means the changes of `my_hot_module.js`  come into affect.
+After that ,we invoke the method `run` of `a_user_of_hot_module.js` immediately ,which will return the `content` (export by `my_hot_module.js`), and print
+the result, as you can see ,it print "hello world" ，which means the change of `my_hot_module.js`  comes into affect.
 
 What's graceful is that all you need to do is just call `dload.reload`, you do not need to require the target module manually again ,and the process would
 not restart.
 
-In the example,the `my_hot_module.js` is modified by the process itself,in most cases,we watch a list of files by `fs.watch`,when some of them are changed
+In the example,the `my_hot_module.js` is modified by the process itself, in most cases,we watch a list of files by `fs.watch`, when some of them are changed
 we reload it.
 
 
