@@ -7,7 +7,7 @@
 
 __Fist Of All__ : It's very difficult to implement a safety hot-reload tool. `dload` can't cover  everything for you ,it just provide
 a nice way to mannage the reference of  modules,and update module globally without any extra code.You should be careful of the resource
-created by the hot module.And the best way is that the hot module dosen't hold any resource,it just takes an input and returns an output.
+hold by the hot module.And the best way is that the hot module dosen't hold any resource,it just takes an input and returns an output.
 
 
 
